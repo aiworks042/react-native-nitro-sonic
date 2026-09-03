@@ -1,0 +1,40 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": [
+    "nitrosonic"
+  ],
+  "ios": {
+    "iosModuleName": "NitroSonic"
+  },
+  "android": {
+    "androidNamespace": [
+      "nitrosonic"
+    ],
+    "androidCxxLibName": "NitroSonic"
+  },
+  "autolinking": {
+    "Sound": {
+      "ios": {
+        "language": "swift",
+        "implementationClassName": "HybridSonic"
+      },
+      "android": {
+        "language": "kotlin",
+        "implementationClassName": "HybridSonic"
+      }
+    },
+    "SoundPlayer": {
+      "ios": {
+        "language": "swift",
+        "implementationClassName": "HybridSonicPlayer"
+      },
+      "android": {
+        "language": "kotlin",
+        "implementationClassName": "HybridSonicPlayer"
+      }
+    }
+  },
+  "ignorePaths": [
+    "**/node_modules"
+  ]
+}
