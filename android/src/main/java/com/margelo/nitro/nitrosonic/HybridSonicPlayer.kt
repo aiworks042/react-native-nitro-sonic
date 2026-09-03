@@ -40,7 +40,11 @@ class HybridSonicPlayer(
     get() = mediaPlayer?.isPlaying ?: false
 
   init {
-    val resId = context.resources.getIdentifier(source, "raw", context.packageName)
+    val cleanName = source.substringBeforeLast(".")
+    var resId = context.resources.getIdentifier(cleanName, "raw", context.packageName)
+    if (resId == 0) {
+      resId = context.resources.getIdentifier(source, "raw", context.packageName)
+    }
     if (resId != 0) {
       mediaPlayer = MediaPlayer.create(context, resId)?.apply {
         isLooping = this@HybridSonicPlayer.isLooping

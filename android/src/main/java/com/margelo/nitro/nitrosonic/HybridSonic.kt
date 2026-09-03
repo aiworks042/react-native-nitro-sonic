@@ -33,6 +33,15 @@ class HybridSonic : HybridSoundSpec() {
       context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     }
 
+  private fun getRawResourceId(name: String): Int {
+    val cleanName = name.substringBeforeLast(".")
+    var resId = context.resources.getIdentifier(cleanName, "raw", context.packageName)
+    if (resId == 0) {
+      resId = context.resources.getIdentifier(name, "raw", context.packageName)
+    }
+    return resId
+  }
+
   override fun play(source: String, options: SoundOptions?): Promise<Boolean> {
     val promise = Promise<Boolean>()
     try {
@@ -41,13 +50,32 @@ class HybridSonic : HybridSoundSpec() {
         return promise
       }
 
-      val resId = context.resources.getIdentifier(source, "raw", context.packageName)
+      val resId = getRawResourceId(source)
       if (resId == 0) {
         promise.resolve(false)
         return promise
       }
 
-      val mp = MediaPlayer.create(context, resId)
+      val cat = options?.category ?: currentCategory
+      val usage = when (cat) {
+        AudioCategory.NOTIFICATION -> AudioAttributes.USAGE_NOTIFICATION
+        AudioCategory.UI -> AudioAttributes.USAGE_ASSISTANCE_SONIFICATION
+        AudioCategory.PLAYBACK -> AudioAttributes.USAGE_MEDIA
+        AudioCategory.AMBIENT -> AudioAttributes.USAGE_MEDIA
+        AudioCategory.ALARM -> AudioAttributes.USAGE_ALARM
+      }
+
+      val attrs = AudioAttributes.Builder()
+        .setUsage(usage)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .build()
+
+      val mp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        MediaPlayer.create(context, resId, attrs, 0) ?: MediaPlayer.create(context, resId)
+      } else {
+        MediaPlayer.create(context, resId)
+      }
+
       if (mp == null) {
         promise.resolve(false)
         return promise
@@ -57,21 +85,12 @@ class HybridSonic : HybridSoundSpec() {
       mp.setVolume(vol, vol)
       mp.isLooping = options?.loop ?: false
 
-      val cat = options?.category ?: currentCategory
-      mp.setAudioAttributes(
-        AudioAttributes.Builder()
-          .setUsage(
-            when (cat) {
-              AudioCategory.NOTIFICATION -> AudioAttributes.USAGE_NOTIFICATION
-              AudioCategory.UI -> AudioAttributes.USAGE_ASSISTANCE_SONIFICATION
-              AudioCategory.PLAYBACK -> AudioAttributes.USAGE_MEDIA
-              AudioCategory.AMBIENT -> AudioAttributes.USAGE_MEDIA
-              AudioCategory.ALARM -> AudioAttributes.USAGE_ALARM
-            }
-          )
-          .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-          .build()
-      )
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && options?.speed != null) {
+        try {
+          val speed = options.speed.toFloat().coerceIn(0.5f, 2.0f)
+          mp.playbackParams = mp.playbackParams.setSpeed(speed)
+        } catch (_: Throwable) {}
+      }
 
       synchronized(activePlayers) {
         activePlayers.add(mp)
@@ -103,7 +122,7 @@ class HybridSonic : HybridSoundSpec() {
         return promise
       }
 
-      val resId = context.resources.getIdentifier(soundName, "raw", context.packageName)
+      val resId = getRawResourceId(soundName)
       if (resId == 0) {
         promise.resolve(false)
         return promise
@@ -123,7 +142,17 @@ class HybridSonic : HybridSoundSpec() {
         } catch (_: Throwable) {}
       }
 
-      val mp = MediaPlayer.create(context, resId)
+      val attrs = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .build()
+
+      val mp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        MediaPlayer.create(context, resId, attrs, 0) ?: MediaPlayer.create(context, resId)
+      } else {
+        MediaPlayer.create(context, resId)
+      }
+
       if (mp == null) {
         promise.resolve(false)
         return promise
@@ -132,13 +161,6 @@ class HybridSonic : HybridSoundSpec() {
       val vol = ((options?.volume ?: 1.0) * masterVolume).toFloat().coerceIn(0f, 1f)
       mp.setVolume(vol, vol)
       mp.isLooping = options?.loop ?: false
-
-      mp.setAudioAttributes(
-        AudioAttributes.Builder()
-          .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-          .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-          .build()
-      )
 
       synchronized(activePlayers) {
         activePlayers.add(mp)
@@ -161,7 +183,7 @@ class HybridSonic : HybridSoundSpec() {
 
   override fun preload(source: String): Promise<Boolean> {
     val promise = Promise<Boolean>()
-    val resId = context.resources.getIdentifier(source, "raw", context.packageName)
+    val resId = getRawResourceId(source)
     promise.resolve(resId != 0)
     return promise
   }
