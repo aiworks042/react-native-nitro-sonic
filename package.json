@@ -1,6 +1,6 @@
 {
   "name": "react-native-nitro-sonic",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Blazing-fast, zero-bridge audio and real-time notification sound library for React Native powered by Nitro Modules.",
   "main": "lib/index",
   "module": "lib/index",
