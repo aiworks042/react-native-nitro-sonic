@@ -13,7 +13,7 @@ class HybridSonicPlayer(
   private val context: Context,
   private val source: String,
   options: SoundOptions? = null
-) : HybridSonicPlayerSpec() {
+) : HybridSoundPlayerSpec() {
 
   private var mediaPlayer: MediaPlayer? = null
 

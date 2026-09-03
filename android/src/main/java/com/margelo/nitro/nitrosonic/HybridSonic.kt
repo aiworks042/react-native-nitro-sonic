@@ -14,7 +14,7 @@ import com.margelo.nitro.core.Promise
 
 @Keep
 @DoNotStrip
-class HybridSonic : HybridSonicSpec() {
+class HybridSonic : HybridSoundSpec() {
 
   private val context: Context
     get() = NitroModules.applicationContext ?: throw Error("Lost applicationContext in NitroSonic")
@@ -204,8 +204,8 @@ class HybridSonic : HybridSonicSpec() {
   override fun createPlayer(
     source: String,
     options: SoundOptions?
-  ): Promise<HybridSonicPlayerSpec> {
-    val promise = Promise<HybridSonicPlayerSpec>()
+  ): Promise<HybridSoundPlayerSpec> {
+    val promise = Promise<HybridSoundPlayerSpec>()
     try {
       val player = HybridSonicPlayer(context, source, options)
       promise.resolve(player)
